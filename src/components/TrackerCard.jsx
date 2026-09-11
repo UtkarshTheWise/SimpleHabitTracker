@@ -25,7 +25,10 @@ export default function TrackerCard({ tracker, logs, onLog, onDelete }) {
   };
 
   return (
-    <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 flex flex-col gap-3">
+    <div
+      className="rounded-xl border p-4 flex flex-col gap-3"
+      style={{ backgroundColor: `${color}1a`, borderColor: `${color}66` }}
+    >
       <div className="flex items-start justify-between gap-2">
         <div>
           <h3 className="font-medium text-sm">{tracker.title}</h3>
