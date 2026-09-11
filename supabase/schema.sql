@@ -14,8 +14,12 @@ create table if not exists trackers (
   target_value numeric,
   unit text,
   deadline date,
+  color text default '#171717',
   created_at timestamptz default now()
 );
+
+-- Migration for installs created before the `color` column existed.
+alter table trackers add column if not exists color text default '#171717';
 
 -- Daily log entries (one row per tracker per day) ---------------------
 
@@ -38,23 +42,42 @@ create table if not exists user_settings (
   dark_mode boolean default true
 );
 
+-- To-do queue -----------------------------------------------------------
+
+create table if not exists todos (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  text text not null,
+  created_at timestamptz default now()
+);
+
 -- Row Level Security: each user can only see/edit their own rows -------
 
 alter table trackers enable row level security;
 alter table tracker_logs enable row level security;
 alter table user_settings enable row level security;
+alter table todos enable row level security;
 
+drop policy if exists "Users manage their own trackers" on trackers;
 create policy "Users manage their own trackers"
   on trackers for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users manage their own logs" on tracker_logs;
 create policy "Users manage their own logs"
   on tracker_logs for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users manage their own settings" on user_settings;
 create policy "Users manage their own settings"
   on user_settings for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users manage their own todos" on todos;
+create policy "Users manage their own todos"
+  on todos for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);

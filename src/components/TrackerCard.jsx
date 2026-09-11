@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { CheckCircle2, Circle, Minus, Plus, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, Minus, Plus, Trash2, Trophy } from 'lucide-react';
 import ProgressBar from './ProgressBar';
 import StreakBadge from './StreakBadge';
-import { TRACKER_TYPES } from '../utils/trackerTypes';
-import { computeStreak, daysUntil, getLastNDays, todayKey } from '../utils/dateUtils';
+import StreakHeatmap from './StreakHeatmap';
+import { DEFAULT_TRACKER_COLOR, TRACKER_TYPES } from '../utils/trackerTypes';
+import { computeLongestStreak, computeStreak, daysUntil, getLastNDays, todayKey } from '../utils/dateUtils';
 
 export default function TrackerCard({ tracker, logs, onLog, onDelete }) {
   const [busy, setBusy] = useState(false);
@@ -11,9 +12,11 @@ export default function TrackerCard({ tracker, logs, onLog, onDelete }) {
   const trackerLogs = logs[tracker.id] || {};
   const todayValue = trackerLogs[today] || 0;
   const streak = computeStreak(trackerLogs);
+  const longestStreak = computeLongestStreak(trackerLogs);
   const days = daysUntil(tracker.deadline);
   const isDone = todayValue > 0;
   const step = tracker.type === TRACKER_TYPES.DURATION ? 5 : 1;
+  const color = tracker.color || DEFAULT_TRACKER_COLOR;
 
   const handleLog = async (value) => {
     setBusy(true);
@@ -45,13 +48,22 @@ export default function TrackerCard({ tracker, logs, onLog, onDelete }) {
             className="flex items-center gap-2 text-sm font-medium disabled:opacity-50"
           >
             {isDone ? (
-              <CheckCircle2 size={22} className="text-neutral-900 dark:text-neutral-100" />
+              <CheckCircle2 size={22} style={{ color }} />
             ) : (
               <Circle size={22} className="text-neutral-300 dark:text-neutral-700" />
             )}
             {isDone ? 'Done today' : 'Mark done'}
           </button>
-          {tracker.type === TRACKER_TYPES.STREAK && <StreakBadge count={streak} />}
+          {tracker.type === TRACKER_TYPES.STREAK && (
+            <div className="flex items-center gap-1.5">
+              <StreakBadge count={streak} color={color} />
+              {longestStreak > streak && (
+                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                  <Trophy size={12} /> {longestStreak} best
+                </span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -87,7 +99,9 @@ export default function TrackerCard({ tracker, logs, onLog, onDelete }) {
               </span>
             )}
           </div>
-          {tracker.target_value > 0 && <ProgressBar value={todayValue} target={tracker.target_value} />}
+          {tracker.target_value > 0 && (
+            <ProgressBar value={todayValue} target={tracker.target_value} color={color} />
+          )}
         </div>
       )}
 
@@ -99,13 +113,16 @@ export default function TrackerCard({ tracker, logs, onLog, onDelete }) {
             <span
               key={day}
               title={`${day}: ${val}${tracker.unit ? ` ${tracker.unit}` : ''}`}
-              className={`h-2 flex-1 rounded-sm transition-colors ${
-                met ? 'bg-neutral-900 dark:bg-neutral-100' : 'bg-neutral-100 dark:bg-neutral-800'
-              }`}
+              className={`h-2 flex-1 rounded-sm transition-colors ${met ? '' : 'bg-neutral-100 dark:bg-neutral-800'}`}
+              style={met ? { backgroundColor: color } : undefined}
             />
           );
         })}
       </div>
+
+      {tracker.type === TRACKER_TYPES.STREAK && (
+        <StreakHeatmap logsForTracker={trackerLogs} color={color} />
+      )}
 
       {days !== null && (
         <p className="text-xs text-neutral-400">

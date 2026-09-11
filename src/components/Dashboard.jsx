@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import TrackerCard from './TrackerCard';
 import TrackerModal from './TrackerModal';
+import TodoQueue from './TodoQueue';
 
-export default function Dashboard({ trackerState }) {
+export default function Dashboard({ trackerState, todoState }) {
   const { trackers, logs, loading, addTracker, removeTracker, logValue } = trackerState;
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -15,6 +16,8 @@ export default function Dashboard({ trackerState }) {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-6 pb-24">
+      <TodoQueue todos={todoState.todos} onAdd={todoState.addTodo} onRemove={todoState.removeTodo} />
+
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-sm font-medium text-neutral-500">Today</h2>
         <button

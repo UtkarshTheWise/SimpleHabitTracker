@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CheckSquare, Clock, Flame, Hash, X } from 'lucide-react';
-import { CATEGORY_OPTIONS, TRACKER_TYPE_META, TRACKER_TYPES } from '../utils/trackerTypes';
+import { CATEGORY_OPTIONS, COLOR_PRESETS, DEFAULT_TRACKER_COLOR, TRACKER_TYPE_META, TRACKER_TYPES } from '../utils/trackerTypes';
 
 const TYPE_ICONS = {
   [TRACKER_TYPES.STREAK]: Flame,
@@ -16,6 +16,7 @@ export default function TrackerModal({ onCreate, onClose }) {
   const [targetValue, setTargetValue] = useState('');
   const [unit, setUnit] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [color, setColor] = useState(DEFAULT_TRACKER_COLOR);
   const [saving, setSaving] = useState(false);
 
   const needsTarget = type === TRACKER_TYPES.DURATION || type === TRACKER_TYPES.NUMERIC;
@@ -31,6 +32,7 @@ export default function TrackerModal({ onCreate, onClose }) {
       target_value: needsTarget && targetValue ? Number(targetValue) : null,
       unit: needsTarget ? unit.trim() || null : null,
       deadline: deadline || null,
+      color,
     });
     setSaving(false);
     onClose();
@@ -125,6 +127,31 @@ export default function TrackerModal({ onCreate, onClose }) {
             </div>
           </div>
         )}
+
+        <div>
+          <label className="text-xs font-medium text-neutral-500">Color</label>
+          <div className="mt-1 flex items-center gap-2 flex-wrap">
+            {COLOR_PRESETS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                className={`w-6 h-6 rounded-full border-2 ${
+                  color === c ? 'border-neutral-900 dark:border-neutral-100' : 'border-transparent'
+                }`}
+                style={{ backgroundColor: c }}
+                aria-label={c}
+              />
+            ))}
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="w-6 h-6 rounded-full border-none cursor-pointer bg-transparent p-0"
+              aria-label="Custom color"
+            />
+          </div>
+        </div>
 
         <div>
           <label className="text-xs font-medium text-neutral-500">Target deadline (optional)</label>

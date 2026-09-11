@@ -7,7 +7,11 @@ A minimalist daily goal & habit tracker. React + Tailwind + Supabase (Google OAu
 - Google sign-in via Supabase Auth (falls back to a local-only mode if Supabase isn't configured)
 - Custom trackers: Streak Counter, Duration, Boolean Checkbox, Numeric Goal
 - Optional daily target and deadline per tracker
+- Pick a custom color per tracker (used across its badge, progress bar, and history)
 - One-tap logging, streak badges, progress bars, 7-day history strip
+- Longest-streak counter and a tiny GitHub/LeetCode-style contribution map for Streak Counter trackers
+- A queue-style to-do bar for quick, ad-hoc tasks
+- A one-line fun fact / dad joke at the bottom of the page (click to reshuffle)
 - Dark mode
 - Local browser notification reminder at a chosen time (see [Notifications](#notifications))
 
@@ -30,7 +34,7 @@ Open the printed localhost URL. Without Supabase env vars set, the app runs in *
 ### b. Create the database tables
 
 1. Open the **SQL Editor** in your Supabase project.
-2. Paste the contents of `supabase/schema.sql` and run it. This creates `trackers`, `tracker_logs`, and `user_settings`, and locks them down with Row Level Security so each user can only see their own data.
+2. Paste the contents of `supabase/schema.sql` and run it. This creates `trackers`, `tracker_logs`, `user_settings`, and `todos`, and locks them down with Row Level Security so each user can only see their own data. (If you already have an older copy of these tables, re-running `schema.sql` is safe — it adds the new `color` column and `todos` table without touching existing data.)
 
 ### c. Enable Google sign-in
 
@@ -85,8 +89,9 @@ src/
   App.jsx
   main.jsx
   index.css
-  components/   Login, Header, Dashboard, TrackerCard, TrackerModal, SettingsModal, ProgressBar, StreakBadge
-  hooks/        useAuth, useTrackers, useNotifications
+  components/   Login, Header, Dashboard, TrackerCard, TrackerModal, SettingsModal, ProgressBar,
+                StreakBadge, StreakHeatmap, TodoQueue, FunFact
+  hooks/        useAuth, useTrackers, useTodos, useNotifications
   lib/          supabaseClient.js, data.js (Supabase/localStorage data layer)
   utils/        dateUtils.js, trackerTypes.js
 supabase/
@@ -97,5 +102,7 @@ supabase/
 
 - Data model: one log row per tracker per day (`value` — 0/1 for boolean & streak types, a number for duration/numeric types).
 - Streak counts consecutive days with a logged value; today doesn't zero out an existing streak until the day ends without a log.
+- Longest streak and the contribution map are computed from the full log history (local and Supabase modes both load all logs; see `fetchLogs` in `lib/data.js`).
+- The to-do bar is a lightweight, ad-hoc FIFO queue (oldest task highlighted as "up next"); it's separate from the trackers and isn't logged/streaked.
 - No custom backend server — Supabase is used directly from the client, with Row Level Security enforcing per-user data isolation.
 - Stack: Vite + React (JavaScript, not TypeScript) + Tailwind CSS + lucide-react, chosen for minimal build config.

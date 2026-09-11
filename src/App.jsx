@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useTrackers } from './hooks/useTrackers';
+import { useTodos } from './hooks/useTodos';
 import { useNotifications } from './hooks/useNotifications';
 import * as data from './lib/data';
 import Login from './components/Login';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import SettingsModal from './components/SettingsModal';
+import FunFact from './components/FunFact';
 
 export default function App() {
   const { user, loading: authLoading, signInWithGoogle, signOut, isLocal } = useAuth();
@@ -14,6 +16,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const trackerState = useTrackers(user?.id);
+  const todoState = useTodos(user?.id);
   useNotifications(settings);
 
   useEffect(() => {
@@ -46,7 +49,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 transition-colors">
       <Header isLocal={isLocal} onSignOut={signOut} onOpenSettings={() => setSettingsOpen(true)} />
-      <Dashboard trackerState={trackerState} />
+      <Dashboard trackerState={trackerState} todoState={todoState} />
+      <FunFact />
       {settingsOpen && settings && (
         <SettingsModal settings={settings} onSave={updateSettings} onClose={() => setSettingsOpen(false)} />
       )}

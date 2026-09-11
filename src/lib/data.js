@@ -6,6 +6,7 @@ const LS_KEYS = {
   trackers: (uid) => `tracker_app_trackers_${uid}`,
   logs: (uid) => `tracker_app_logs_${uid}`,
   settings: (uid) => `tracker_app_settings_${uid}`,
+  todos: (uid) => `tracker_app_todos_${uid}`,
 };
 
 function readLS(key, fallback) {
@@ -68,14 +69,11 @@ export async function deleteTracker(userId, trackerId) {
 // ---------- Logs ----------
 // Shape once fetched: { [trackerId]: { [dateKey]: value } }
 
-export async function fetchLogs(userId, days = 30) {
+export async function fetchLogs(userId) {
   if (isSupabaseConfigured) {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
-    const { data, error } = await supabase
-      .from('tracker_logs')
-      .select('*')
-      .gte('log_date', since.toISOString().slice(0, 10));
+    // Full history (not just a recent window) so streaks — especially the
+    // longest streak — are computed across all-time data, matching local mode.
+    const { data, error } = await supabase.from('tracker_logs').select('*');
     if (error) throw error;
     const map = {};
     for (const row of data) {
@@ -121,4 +119,38 @@ export async function saveSettings(userId, settings) {
     return;
   }
   writeLS(LS_KEYS.settings(userId), settings);
+}
+
+// ---------- To-do queue ----------
+// Ordered by created_at, oldest first — the front of the queue.
+
+export async function fetchTodos(userId) {
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase.from('todos').select('*').order('created_at', { ascending: true });
+    if (error) throw error;
+    return data;
+  }
+  return readLS(LS_KEYS.todos(userId), []);
+}
+
+export async function createTodo(userId, text) {
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase.from('todos').insert({ text, user_id: userId }).select().single();
+    if (error) throw error;
+    return data;
+  }
+  const todos = readLS(LS_KEYS.todos(userId), []);
+  const newTodo = { id: uid(), user_id: userId, text, created_at: new Date().toISOString() };
+  writeLS(LS_KEYS.todos(userId), [...todos, newTodo]);
+  return newTodo;
+}
+
+export async function deleteTodo(userId, todoId) {
+  if (isSupabaseConfigured) {
+    const { error } = await supabase.from('todos').delete().eq('id', todoId);
+    if (error) throw error;
+    return;
+  }
+  const todos = readLS(LS_KEYS.todos(userId), []);
+  writeLS(LS_KEYS.todos(userId), todos.filter((t) => t.id !== todoId));
 }
